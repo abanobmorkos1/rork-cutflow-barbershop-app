@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { CalendarDays, Users, Scissors, TrendingUp, LogOut, DollarSign, CalendarPlus, X, Clock, ChevronRight } from 'lucide-react-native';
+import { CalendarDays, Users, Scissors, TrendingUp, LogOut, DollarSign, CalendarPlus, X, Clock, ChevronRight, Store } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
@@ -9,8 +9,17 @@ import { useData } from '@/contexts/DataContext';
 export default function OwnerDashboard() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { barbers, services, appointments } = useData();
+  const { getShopByOwnerId, getShopBarbers, getShopServices, getShopAppointments } = useData();
   const [showServicePicker, setShowServicePicker] = useState(false);
+
+  const shop = useMemo(() => {
+    if (!user) return null;
+    return getShopByOwnerId(user.id);
+  }, [user, getShopByOwnerId]);
+
+  const barbers = useMemo(() => (shop ? getShopBarbers(shop.id) : []), [shop, getShopBarbers]);
+  const services = useMemo(() => (shop ? getShopServices(shop.id) : []), [shop, getShopServices]);
+  const appointments = useMemo(() => (shop ? getShopAppointments(shop.id) : []), [shop, getShopAppointments]);
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -43,6 +52,12 @@ export default function OwnerDashboard() {
         <View>
           <Text style={styles.greeting}>Good day,</Text>
           <Text style={styles.name}>{user?.name ?? 'Owner'}</Text>
+          {shop && (
+            <View style={styles.shopBadge}>
+              <Store size={12} color={Colors.accent} />
+              <Text style={styles.shopBadgeText}>{shop.name}</Text>
+            </View>
+          )}
         </View>
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <LogOut size={20} color={Colors.textSecondary} />
@@ -125,6 +140,7 @@ export default function OwnerDashboard() {
           <Text style={styles.actionText}>Book Appointment</Text>
         </TouchableOpacity>
       </View>
+
       <Modal
         visible={showServicePicker}
         transparent
@@ -148,7 +164,7 @@ export default function OwnerDashboard() {
                   activeOpacity={0.7}
                   onPress={() => {
                     setShowServicePicker(false);
-                    router.push(`/booking/choose-barber?serviceId=${svc.id}` as any);
+                    router.push(`/booking/choose-barber?serviceId=${svc.id}&shopId=${shop?.id}` as any);
                   }}
                 >
                   <View style={styles.modalServiceIcon}>
@@ -190,6 +206,18 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 14, color: Colors.textSecondary },
   name: { fontSize: 24, fontWeight: '700' as const, color: Colors.text, marginTop: 2 },
+  shopBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 6,
+    backgroundColor: 'rgba(200,149,108,0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  shopBadgeText: { fontSize: 12, fontWeight: '600' as const, color: Colors.accent },
   logoutBtn: {
     width: 44,
     height: 44,
@@ -213,9 +241,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  statCardLarge: {
-    padding: 20,
-  },
+  statCardLarge: { padding: 20 },
   statIcon: {
     width: 40,
     height: 40,
@@ -230,10 +256,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginBottom: 4,
   },
-  statLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
+  statLabel: { fontSize: 12, color: Colors.textSecondary },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700' as const,
@@ -255,11 +278,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     gap: 10,
   },
-  actionText: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: Colors.text,
-  },
+  actionText: { fontSize: 14, fontWeight: '600' as const, color: Colors.text },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -290,11 +309,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: Colors.text,
-  },
+  modalTitle: { fontSize: 18, fontWeight: '700' as const, color: Colors.text },
   modalClose: {
     width: 36,
     height: 36,
@@ -303,10 +318,7 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
-  modalList: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
+  modalList: { paddingHorizontal: 20, paddingTop: 16 },
   modalServiceCard: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
@@ -325,16 +337,8 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
-  modalServiceInfo: {
-    flex: 1,
-    marginLeft: 14,
-    marginRight: 8,
-  },
-  modalServiceName: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: Colors.text,
-  },
+  modalServiceInfo: { flex: 1, marginLeft: 14, marginRight: 8 },
+  modalServiceName: { fontSize: 16, fontWeight: '600' as const, color: Colors.text },
   modalServiceMeta: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
@@ -347,12 +351,6 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginRight: 8,
   },
-  modalEmpty: {
-    alignItems: 'center' as const,
-    paddingVertical: 32,
-  },
-  modalEmptyText: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-  },
+  modalEmpty: { alignItems: 'center' as const, paddingVertical: 32 },
+  modalEmptyText: { fontSize: 15, color: Colors.textSecondary },
 });

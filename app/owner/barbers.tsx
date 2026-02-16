@@ -10,22 +10,32 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Barber } from '@/types';
 
 export default function ManageBarbersScreen() {
-  const { barbers, inviteBarber, removeBarber } = useData();
+  const { barbers, inviteBarber, removeBarber, getShopByOwnerId } = useData();
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
 
+  const shop = useMemo(() => {
+    if (!user) return null;
+    return getShopByOwnerId(user.id);
+  }, [user, getShopByOwnerId]);
+
+  const shopBarbers = useMemo(() => {
+    if (!shop) return [];
+    return barbers.filter((b) => b.shopId === shop.id);
+  }, [barbers, shop]);
+
   const nonOwnerBarbers = useMemo(() => {
-    return barbers.filter((b) => b.userId !== user?.id);
-  }, [barbers, user]);
+    return shopBarbers.filter((b) => b.userId !== user?.id);
+  }, [shopBarbers, user]);
 
   const ownerBarber = useMemo(() => {
-    return barbers.find((b) => b.userId === user?.id);
-  }, [barbers, user]);
-
+    return shopBarbers.find((b) => b.userId === user?.id);
+  }, [shopBarbers, user]);
 
   const handleInvite = async () => {
+    if (!shop) return;
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) {
       Alert.alert('Error', 'Please enter an email address');
@@ -45,7 +55,7 @@ export default function ManageBarbersScreen() {
     }
     setSending(true);
     try {
-      await inviteBarber(trimmed);
+      await inviteBarber(trimmed, shop.id);
       setEmail('');
       setShowForm(false);
       Alert.alert(
@@ -60,6 +70,10 @@ export default function ManageBarbersScreen() {
   };
 
   const handleRemove = (barber: Barber) => {
+    if (barber.userId === user?.id) {
+      Alert.alert('Cannot Remove', 'You cannot remove the owner barber profile.');
+      return;
+    }
     Alert.alert(
       'Remove Barber',
       `Remove ${barber.inviteEmail || barber.name} from the team? Their $10/mo subscription will be canceled.`,
@@ -270,11 +284,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
     marginTop: 4,
-  },
-  billingTotal: {
-    fontWeight: '800' as const,
-    color: Colors.accent,
-    fontSize: 16,
   },
   billingNote: {
     fontSize: 12,

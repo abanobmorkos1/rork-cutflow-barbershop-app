@@ -48,13 +48,14 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     return null;
   }, [users]);
 
-  const signup = useCallback(async (name: string, email: string, phone: string, role: UserRole): Promise<User> => {
+  const signup = useCallback(async (name: string, email: string, phone: string, role: UserRole, shopId?: string): Promise<User> => {
     const newUser: User = {
       id: `user-${Date.now()}`,
       name,
       email,
       phone,
       role,
+      shopId,
       createdAt: new Date().toISOString(),
     };
     const updated = [...users, newUser];

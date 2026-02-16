@@ -10,11 +10,13 @@ import { getAvailableSlots, formatTime, getCalendarDays, MONTH_NAMES, WEEKDAY_HE
 
 export default function PickTimeScreen() {
   const router = useRouter();
-  const { serviceId, barberId } = useLocalSearchParams<{ serviceId: string; barberId: string }>();
-  const { getBarberById, getServiceById, appointments, shopHours, getBarberPrice } = useData();
+  const { serviceId, barberId, shopId } = useLocalSearchParams<{ serviceId: string; barberId: string; shopId: string }>();
+  const { getBarberById, getServiceById, appointments, getShopById, getBarberPrice } = useData();
 
   const barber = barberId ? getBarberById(barberId) : null;
   const service = serviceId ? getServiceById(serviceId) : null;
+  const shop = shopId ? getShopById(shopId) : null;
+  const shopHours = shop?.hours ?? {};
 
   const now = new Date();
   const [calMonth, setCalMonth] = useState(now.getMonth());
@@ -57,14 +59,9 @@ export default function PickTimeScreen() {
     if (!selectedTime) return;
     const dateStr = toDateStr(selectedDate);
     router.push(
-      `/booking/confirm?serviceId=${serviceId}&barberId=${barberId}&date=${dateStr}&time=${selectedTime}` as any
+      `/booking/confirm?serviceId=${serviceId}&barberId=${barberId}&date=${dateStr}&time=${selectedTime}&shopId=${shopId}` as any
     );
   };
-
-  const isSameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
 
   const selectedDateStr = useMemo(() => toDateStr(selectedDate), [selectedDate]);
 

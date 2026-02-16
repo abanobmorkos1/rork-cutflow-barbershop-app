@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { ChevronRight, DollarSign, Award } from 'lucide-react-native';
@@ -7,15 +7,18 @@ import { useData } from '@/contexts/DataContext';
 
 export default function ChooseBarberScreen() {
   const router = useRouter();
-  const { serviceId } = useLocalSearchParams<{ serviceId: string }>();
-  const { barbers, getServiceById, getBarberPrice } = useData();
+  const { serviceId, shopId } = useLocalSearchParams<{ serviceId: string; shopId: string }>();
+  const { getServiceById, getBarberPrice, getShopBarbers } = useData();
 
   const service = serviceId ? getServiceById(serviceId) : null;
 
-  const activeBarbers = barbers.filter((b) => b.inviteStatus !== 'pending');
+  const activeBarbers = useMemo(() => {
+    if (!shopId) return [];
+    return getShopBarbers(shopId).filter((b) => b.inviteStatus !== 'pending');
+  }, [shopId, getShopBarbers]);
 
   const handleSelect = (barberId: string) => {
-    router.push(`/booking/pick-time?serviceId=${serviceId}&barberId=${barberId}` as any);
+    router.push(`/booking/pick-time?serviceId=${serviceId}&barberId=${barberId}&shopId=${shopId}` as any);
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, Alert,
@@ -6,23 +6,37 @@ import {
 import { Plus, Trash2, Clock, DollarSign, Scissors } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Service } from '@/types';
 
 export default function ManageServicesScreen() {
-  const { services, addService, removeService } = useData();
+  const { services, addService, removeService, getShopByOwnerId } = useData();
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [duration, setDuration] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
 
+  const shop = useMemo(() => {
+    if (!user) return null;
+    return getShopByOwnerId(user.id);
+  }, [user, getShopByOwnerId]);
+
+  const shopServices = useMemo(() => {
+    if (!shop) return [];
+    return services.filter((s) => s.shopId === shop.id);
+  }, [services, shop]);
+
   const handleAdd = async () => {
+    if (!shop) return;
     if (!name.trim() || !duration.trim() || !price.trim()) {
       Alert.alert('Error', 'Please fill in name, duration, and price');
       return;
     }
     const newService: Service = {
       id: `service-${Date.now()}`,
+      shopId: shop.id,
       name: name.trim(),
       duration: parseInt(duration, 10) || 30,
       price: parseFloat(price) || 0,
@@ -105,7 +119,7 @@ export default function ManageServicesScreen() {
         </View>
       )}
 
-      {services.map((svc) => (
+      {shopServices.map((svc) => (
         <View key={svc.id} style={styles.serviceCard}>
           <View style={styles.serviceHeader}>
             <View style={styles.serviceIcon}>
@@ -132,7 +146,7 @@ export default function ManageServicesScreen() {
         </View>
       ))}
 
-      {services.length === 0 && (
+      {shopServices.length === 0 && (
         <View style={styles.empty}>
           <Scissors size={48} color={Colors.textMuted} />
           <Text style={styles.emptyText}>No services yet</Text>

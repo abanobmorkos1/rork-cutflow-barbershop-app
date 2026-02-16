@@ -4,20 +4,26 @@ import {
   KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
-import { User, Mail, Phone, Shield, Users, CreditCard, Info } from 'lucide-react-native';
+import { User, Mail, Phone, Shield, Users, CreditCard, Info, Store, MapPin } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/types';
+import { useData } from '@/contexts/DataContext';
+import { UserRole, Shop, Barber } from '@/types';
+import { DEFAULT_SHOP_HOURS } from '@/mocks/data';
 
 export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signup } = useAuth();
+  const { addShop, addBarber } = useData();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<UserRole>('customer');
+  const [shopName, setShopName] = useState('');
+  const [shopAddress, setShopAddress] = useState('');
+  const [shopCity, setShopCity] = useState('');
   const [loading, setLoading] = useState(false);
 
   const roles: { key: UserRole; label: string; icon: React.ReactNode; desc: string }[] = [
@@ -30,10 +36,58 @@ export default function SignupScreen() {
       Alert.alert('Error', 'Please fill in your name and email');
       return;
     }
+    if (role === 'owner' && !shopName.trim()) {
+      Alert.alert('Error', 'Please enter your shop name');
+      return;
+    }
     setLoading(true);
     try {
-      const user = await signup(name.trim(), email.trim(), phone.trim(), role);
-      const route = user.role === 'owner' ? '/owner' : user.role === 'barber' ? '/barber' : '/customer';
+      const shopId = role === 'owner' ? `shop-${Date.now()}` : undefined;
+      const user = await signup(name.trim(), email.trim(), phone.trim(), role, shopId);
+
+      if (role === 'owner' && shopId) {
+        const newShop: Shop = {
+          id: shopId,
+          ownerId: user.id,
+          name: shopName.trim(),
+          address: shopAddress.trim() || '123 Main St',
+          city: shopCity.trim() || 'Your City',
+          description: `Welcome to ${shopName.trim()}! Book your next appointment with us.`,
+          image: 'https://images.unsplash.com/photo-1585747860019-8004e7de1ab8?w=600&h=400&fit=crop',
+          phone: phone.trim() || '(555) 000-0000',
+          rating: 5.0,
+          reviewCount: 0,
+          hours: { ...DEFAULT_SHOP_HOURS },
+          createdAt: new Date().toISOString(),
+        };
+        await addShop(newShop);
+
+        const ownerBarber: Barber = {
+          id: `barber-owner-${Date.now()}`,
+          userId: user.id,
+          shopId,
+          name: name.trim(),
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=C8956C&color=0A0A0A&size=200`,
+          specialty: 'Owner & Barber',
+          specialtyTags: [],
+          bio: '',
+          instagram: '',
+          yearsExperience: 0,
+          availability: {
+            monday: [{ start: '09:00', end: '17:00' }],
+            tuesday: [{ start: '09:00', end: '17:00' }],
+            wednesday: [{ start: '09:00', end: '17:00' }],
+            thursday: [{ start: '09:00', end: '17:00' }],
+            friday: [{ start: '09:00', end: '17:00' }],
+            saturday: [{ start: '10:00', end: '15:00' }],
+            sunday: [],
+          },
+          inviteStatus: 'accepted',
+        };
+        await addBarber(ownerBarber);
+      }
+
+      const route = user.role === 'owner' ? '/owner' : '/customer';
       router.replace(route as any);
     } catch {
       Alert.alert('Error', 'Something went wrong');
@@ -150,6 +204,58 @@ export default function SignupScreen() {
                 testID="signup-phone"
               />
             </View>
+
+            {role === 'owner' && (
+              <>
+                <View style={styles.shopSectionDivider}>
+                  <View style={styles.shopDividerLine} />
+                  <Text style={styles.shopDividerLabel}>SHOP DETAILS</Text>
+                  <View style={styles.shopDividerLine} />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <View style={styles.inputIcon}>
+                    <Store size={18} color={Colors.textSecondary} />
+                  </View>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Shop name *"
+                    placeholderTextColor={Colors.textMuted}
+                    value={shopName}
+                    onChangeText={setShopName}
+                    testID="signup-shop-name"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <View style={styles.inputIcon}>
+                    <MapPin size={18} color={Colors.textSecondary} />
+                  </View>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Shop address"
+                    placeholderTextColor={Colors.textMuted}
+                    value={shopAddress}
+                    onChangeText={setShopAddress}
+                    testID="signup-shop-address"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <View style={styles.inputIcon}>
+                    <MapPin size={18} color={Colors.textSecondary} />
+                  </View>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="City, State"
+                    placeholderTextColor={Colors.textMuted}
+                    value={shopCity}
+                    onChangeText={setShopCity}
+                    testID="signup-shop-city"
+                  />
+                </View>
+              </>
+            )}
 
             <TouchableOpacity
               style={[styles.signupBtn, loading && styles.signupBtnDisabled]}
@@ -288,5 +394,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textMuted,
     lineHeight: 17,
+  },
+  shopSectionDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginVertical: 4,
+  },
+  shopDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  shopDividerLabel: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: Colors.textMuted,
+    letterSpacing: 1,
   },
 });

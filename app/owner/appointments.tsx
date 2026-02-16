@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { CalendarDays, Filter } from 'lucide-react-native';
+import { CalendarDays } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,9 +17,19 @@ const statusColors: Record<AppointmentStatus, string> = {
 };
 
 export default function AllAppointmentsScreen() {
-  const { appointments, barbers, services } = useData();
-  const { users } = useAuth();
+  const { barbers, services, getShopByOwnerId, getShopAppointments } = useData();
+  const { user, users } = useAuth();
   const [filter, setFilter] = useState<AppointmentStatus | 'All'>('All');
+
+  const shop = useMemo(() => {
+    if (!user) return null;
+    return getShopByOwnerId(user.id);
+  }, [user, getShopByOwnerId]);
+
+  const appointments = useMemo(() => {
+    if (!shop) return [];
+    return getShopAppointments(shop.id);
+  }, [shop, getShopAppointments]);
 
   const filtered = useMemo(() => {
     const sorted = [...appointments].sort(

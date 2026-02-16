@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Scissors, CalendarDays, User } from 'lucide-react-native';
+import { Search, CalendarDays, User } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 
 export default function CustomerLayout() {
@@ -24,8 +24,8 @@ export default function CustomerLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Book',
-          tabBarIcon: ({ color, size }) => <Scissors size={size} color={color} />,
+          title: 'Explore',
+          tabBarIcon: ({ color, size }) => <Search size={size} color={color} />,
         }}
       />
       <Tabs.Screen

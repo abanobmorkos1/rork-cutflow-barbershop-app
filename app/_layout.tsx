@@ -27,6 +27,7 @@ function RootLayoutNav() {
       <Stack.Screen name="barber" />
       <Stack.Screen name="customer" />
       <Stack.Screen name="booking" />
+      <Stack.Screen name="shop" />
     </Stack>
   );
 }

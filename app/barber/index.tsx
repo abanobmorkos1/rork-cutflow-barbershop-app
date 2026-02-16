@@ -20,13 +20,18 @@ const statusColors: Record<AppointmentStatus, string> = {
 export default function BarberScheduleScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { getBarberByUserId, getBarberAppointments, services, updateAppointmentStatus } = useData();
+  const { getBarberByUserId, getBarberAppointments, getShopServices, updateAppointmentStatus } = useData();
   const { users } = useAuth();
 
   const barber = useMemo(() => {
     if (!user) return null;
     return getBarberByUserId(user.id);
   }, [user, getBarberByUserId]);
+
+  const services = useMemo(() => {
+    if (!barber) return [];
+    return getShopServices(barber.shopId);
+  }, [barber, getShopServices]);
 
   const now = new Date();
   const [calMonth, setCalMonth] = useState(now.getMonth());

@@ -1,20 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { Barber, Service, Appointment, ShopHours, AppointmentStatus, WeeklyAvailability, DateOverrides, BarberPrices, BarberSpecialtyTag } from '@/types';
-import { DEMO_BARBERS, DEMO_SERVICES, DEMO_APPOINTMENTS, DEFAULT_SHOP_HOURS } from '@/mocks/data';
-import { DEMO_USERS } from '@/mocks/data';
+import { Barber, Service, Appointment, Shop, ShopHours, AppointmentStatus, WeeklyAvailability, DateOverrides, BarberPrices, BarberSpecialtyTag } from '@/types';
+import { DEMO_BARBERS, DEMO_SERVICES, DEMO_APPOINTMENTS, DEMO_SHOPS, DEFAULT_SHOP_HOURS } from '@/mocks/data';
 
+const SHOPS_KEY = 'cutflow_shops';
 const BARBERS_KEY = 'cutflow_barbers';
 const SERVICES_KEY = 'cutflow_services';
 const APPTS_KEY = 'cutflow_appointments';
-const HOURS_KEY = 'cutflow_hours';
 
 export const [DataProvider, useData] = createContextHook(() => {
+  const [shops, setShops] = useState<Shop[]>(DEMO_SHOPS);
   const [barbers, setBarbers] = useState<Barber[]>(DEMO_BARBERS);
   const [services, setServices] = useState<Service[]>(DEMO_SERVICES);
   const [appointments, setAppointments] = useState<Appointment[]>(DEMO_APPOINTMENTS);
-  const [shopHours, setShopHours] = useState<ShopHours>(DEFAULT_SHOP_HOURS);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -23,27 +22,16 @@ export const [DataProvider, useData] = createContextHook(() => {
 
   const loadData = async () => {
     try {
-      const [b, s, a, h] = await Promise.all([
+      const [sh, b, s, a] = await Promise.all([
+        AsyncStorage.getItem(SHOPS_KEY),
         AsyncStorage.getItem(BARBERS_KEY),
         AsyncStorage.getItem(SERVICES_KEY),
         AsyncStorage.getItem(APPTS_KEY),
-        AsyncStorage.getItem(HOURS_KEY),
       ]);
-      if (b) {
-        const parsed: Barber[] = JSON.parse(b);
-        const ownerUser = DEMO_USERS.find((u) => u.role === 'owner');
-        const ownerBarber = DEMO_BARBERS.find((db) => db.userId === ownerUser?.id);
-        if (ownerBarber && !parsed.find((pb) => pb.userId === ownerUser?.id)) {
-          const withOwner = [ownerBarber, ...parsed];
-          setBarbers(withOwner);
-          await persist(BARBERS_KEY, withOwner);
-        } else {
-          setBarbers(parsed);
-        }
-      }
+      if (sh) setShops(JSON.parse(sh));
+      if (b) setBarbers(JSON.parse(b));
       if (s) setServices(JSON.parse(s));
       if (a) setAppointments(JSON.parse(a));
-      if (h) setShopHours(JSON.parse(h));
     } catch (e) {
       console.log('Error loading data:', e);
     } finally {
@@ -55,6 +43,22 @@ export const [DataProvider, useData] = createContextHook(() => {
     await AsyncStorage.setItem(key, JSON.stringify(data));
   }, []);
 
+  const addShop = useCallback(async (shop: Shop) => {
+    const updated = [...shops, shop];
+    setShops(updated);
+    await persist(SHOPS_KEY, updated);
+  }, [shops, persist]);
+
+  const getShopById = useCallback((id: string) => shops.find((s) => s.id === id), [shops]);
+
+  const getShopByOwnerId = useCallback((ownerId: string) => shops.find((s) => s.ownerId === ownerId), [shops]);
+
+  const getShopBarbers = useCallback((shopId: string) => barbers.filter((b) => b.shopId === shopId), [barbers]);
+
+  const getShopServices = useCallback((shopId: string) => services.filter((s) => s.shopId === shopId), [services]);
+
+  const getShopAppointments = useCallback((shopId: string) => appointments.filter((a) => a.shopId === shopId), [appointments]);
+
   const addBarber = useCallback(async (barber: Barber) => {
     const updated = [...barbers, barber];
     setBarbers(updated);
@@ -62,12 +66,6 @@ export const [DataProvider, useData] = createContextHook(() => {
   }, [barbers, persist]);
 
   const removeBarber = useCallback(async (id: string) => {
-    const ownerUser = DEMO_USERS.find((u) => u.role === 'owner');
-    const barber = barbers.find((b) => b.id === id);
-    if (barber && barber.userId === ownerUser?.id) {
-      console.log('Cannot remove owner barber profile');
-      return;
-    }
     const updated = barbers.filter((b) => b.id !== id);
     setBarbers(updated);
     await persist(BARBERS_KEY, updated);
@@ -115,10 +113,11 @@ export const [DataProvider, useData] = createContextHook(() => {
     await persist(BARBERS_KEY, updated);
   }, [barbers, persist]);
 
-  const inviteBarber = useCallback(async (email: string) => {
+  const inviteBarber = useCallback(async (email: string, shopId: string) => {
     const newBarber: Barber = {
       id: `barber-${Date.now()}`,
       userId: '',
+      shopId,
       name: email.split('@')[0],
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email.split('@')[0])}&background=C8956C&color=0A0A0A&size=200`,
       specialty: 'New Barber',
@@ -187,10 +186,13 @@ export const [DataProvider, useData] = createContextHook(() => {
     await persist(APPTS_KEY, updated);
   }, [appointments, persist]);
 
-  const updateShopHours = useCallback(async (hours: ShopHours) => {
-    setShopHours(hours);
-    await persist(HOURS_KEY, hours);
-  }, [persist]);
+  const updateShopHours = useCallback(async (shopId: string, hours: ShopHours) => {
+    const updated = shops.map((s) =>
+      s.id === shopId ? { ...s, hours } : s
+    );
+    setShops(updated);
+    await persist(SHOPS_KEY, updated);
+  }, [shops, persist]);
 
   const getBarberById = useCallback((id: string) => barbers.find((b) => b.id === id), [barbers]);
   const getServiceById = useCallback((id: string) => services.find((s) => s.id === id), [services]);
@@ -207,11 +209,17 @@ export const [DataProvider, useData] = createContextHook(() => {
   );
 
   return {
+    shops,
     barbers,
     services,
     appointments,
-    shopHours,
     isLoaded,
+    addShop,
+    getShopById,
+    getShopByOwnerId,
+    getShopBarbers,
+    getShopServices,
+    getShopAppointments,
     addBarber,
     removeBarber,
     updateBarberAvailability,

@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, Alert, Animated,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
-import { Check, CalendarDays, User, Scissors, Clock, DollarSign } from 'lucide-react-native';
+import { Check, CalendarDays, User, Scissors, Clock, DollarSign, Store } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
@@ -12,20 +12,22 @@ import { formatTime } from '@/utils/slots';
 
 export default function ConfirmBookingScreen() {
   const router = useRouter();
-  const { serviceId, barberId, date, time } = useLocalSearchParams<{
+  const { serviceId, barberId, date, time, shopId } = useLocalSearchParams<{
     serviceId: string;
     barberId: string;
     date: string;
     time: string;
+    shopId: string;
   }>();
   const { user } = useAuth();
-  const { getBarberById, getServiceById, addAppointment, getBarberPrice } = useData();
+  const { getBarberById, getServiceById, addAppointment, getBarberPrice, getShopById } = useData();
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const checkScale = useRef(new Animated.Value(0)).current;
 
   const barber = barberId ? getBarberById(barberId) : null;
   const service = serviceId ? getServiceById(serviceId) : null;
+  const shop = shopId ? getShopById(shopId) : null;
 
   const price = useMemo(() => {
     if (!barberId || !serviceId) return 0;
@@ -43,7 +45,7 @@ export default function ConfirmBookingScreen() {
     : '';
 
   const handleConfirm = async () => {
-    if (!user || !barberId || !serviceId || !date || !time) return;
+    if (!user || !barberId || !serviceId || !date || !time || !shopId) return;
     setLoading(true);
     try {
       const [y, m, d] = date.split('-').map(Number);
@@ -52,6 +54,7 @@ export default function ConfirmBookingScreen() {
 
       const appt: Appointment = {
         id: `appt-${Date.now()}`,
+        shopId,
         barberId,
         customerId: user.id,
         serviceId,
@@ -88,6 +91,7 @@ export default function ConfirmBookingScreen() {
           </Text>
 
           <View style={styles.summaryCard}>
+            {shop && <Text style={styles.summaryShop}>{shop.name}</Text>}
             <Text style={styles.summaryService}>{service?.name}</Text>
             <Text style={styles.summaryBarber}>with {barber?.name}</Text>
             <Text style={styles.summaryDateTime}>
@@ -123,6 +127,21 @@ export default function ConfirmBookingScreen() {
         <Text style={styles.heading}>Review your booking</Text>
 
         <View style={styles.detailCard}>
+          {shop && (
+            <>
+              <View style={styles.detailRow}>
+                <View style={styles.detailIcon}>
+                  <Store size={18} color={Colors.accent} />
+                </View>
+                <View style={styles.detailContent}>
+                  <Text style={styles.detailLabel}>Shop</Text>
+                  <Text style={styles.detailValue}>{shop.name}</Text>
+                </View>
+              </View>
+              <View style={styles.detailDivider} />
+            </>
+          )}
+
           <View style={styles.detailRow}>
             <View style={styles.detailIcon}>
               <Scissors size={18} color={Colors.accent} />
@@ -283,6 +302,7 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 32,
   },
+  summaryShop: { fontSize: 13, color: Colors.textMuted, marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: 1 },
   summaryService: { fontSize: 18, fontWeight: '700' as const, color: Colors.text },
   summaryBarber: { fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
   summaryDateTime: { fontSize: 15, color: Colors.accent, fontWeight: '600' as const, marginTop: 10 },

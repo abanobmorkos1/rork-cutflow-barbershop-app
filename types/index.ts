@@ -8,6 +8,22 @@ export interface User {
   email: string;
   phone: string;
   role: UserRole;
+  shopId?: string;
+  createdAt: string;
+}
+
+export interface Shop {
+  id: string;
+  ownerId: string;
+  name: string;
+  address: string;
+  city: string;
+  description: string;
+  image: string;
+  phone: string;
+  rating: number;
+  reviewCount: number;
+  hours: ShopHours;
   createdAt: string;
 }
 
@@ -39,6 +55,7 @@ export type BarberSpecialtyTag = typeof BARBER_SPECIALTY_TAGS[number];
 export interface Barber {
   id: string;
   userId: string;
+  shopId: string;
   name: string;
   avatar: string;
   specialty: string;
@@ -72,6 +89,7 @@ export interface BarberPrices {
 
 export interface Service {
   id: string;
+  shopId: string;
   name: string;
   duration: number;
   price: number;
@@ -82,6 +100,7 @@ export type AppointmentStatus = 'Booked' | 'Completed' | 'Canceled' | 'NoShow';
 
 export interface Appointment {
   id: string;
+  shopId: string;
   barberId: string;
   customerId: string;
   serviceId: string;

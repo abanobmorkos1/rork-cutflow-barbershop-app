@@ -10,12 +10,17 @@ import { BarberPrices } from '@/types';
 
 export default function BarberPricingScreen() {
   const { user } = useAuth();
-  const { getBarberByUserId, services, updateBarberPrices } = useData();
+  const { getBarberByUserId, getShopServices, updateBarberPrices } = useData();
 
   const barber = useMemo(() => {
     if (!user) return null;
     return getBarberByUserId(user.id);
   }, [user, getBarberByUserId]);
+
+  const services = useMemo(() => {
+    if (!barber) return [];
+    return getShopServices(barber.shopId);
+  }, [barber, getShopServices]);
 
   const [prices, setPrices] = useState<BarberPrices>(barber?.prices ?? {});
   const [saving, setSaving] = useState(false);

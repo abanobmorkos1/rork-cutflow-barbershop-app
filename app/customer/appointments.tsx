@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { CalendarDays, XCircle } from 'lucide-react-native';
+import { CalendarDays, XCircle, Store } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
@@ -16,7 +16,7 @@ const statusColors: Record<AppointmentStatus, string> = {
 
 export default function CustomerAppointmentsScreen() {
   const { user } = useAuth();
-  const { getCustomerAppointments, updateAppointmentStatus, getBarberById, getServiceById } = useData();
+  const { getCustomerAppointments, updateAppointmentStatus, getBarberById, getServiceById, getShopById } = useData();
 
   const appointments = useMemo(() => {
     if (!user) return [];
@@ -42,6 +42,7 @@ export default function CustomerAppointmentsScreen() {
   const renderAppt = (appt: typeof appointments[0], showCancel: boolean) => {
     const barber = getBarberById(appt.barberId);
     const service = getServiceById(appt.serviceId);
+    const shop = getShopById(appt.shopId);
     return (
       <View key={appt.id} style={styles.card}>
         <View style={styles.cardTop}>
@@ -53,6 +54,12 @@ export default function CustomerAppointmentsScreen() {
           </View>
           <Text style={styles.dateText}>{formatDateTime(appt.dateTime)}</Text>
         </View>
+        {shop && (
+          <View style={styles.shopRow}>
+            <Store size={12} color={Colors.textMuted} />
+            <Text style={styles.shopName}>{shop.name}</Text>
+          </View>
+        )}
         <Text style={styles.serviceName}>{service?.name ?? 'Service'}</Text>
         <Text style={styles.barberName}>with {barber?.name ?? 'Barber'}</Text>
         {service && (
@@ -97,7 +104,7 @@ export default function CustomerAppointmentsScreen() {
         <View style={styles.empty}>
           <CalendarDays size={48} color={Colors.textMuted} />
           <Text style={styles.emptyText}>No bookings yet</Text>
-          <Text style={styles.emptySubtext}>Book your first appointment!</Text>
+          <Text style={styles.emptySubtext}>Explore shops and book your first appointment!</Text>
         </View>
       )}
     </ScrollView>
@@ -128,7 +135,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -141,6 +148,13 @@ const styles = StyleSheet.create({
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 12, fontWeight: '700' as const },
   dateText: { fontSize: 12, color: Colors.textSecondary },
+  shopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  shopName: { fontSize: 12, color: Colors.textMuted, fontWeight: '600' as const },
   serviceName: { fontSize: 17, fontWeight: '600' as const, color: Colors.text },
   barberName: { fontSize: 14, color: Colors.textSecondary, marginTop: 3 },
   priceRow: {
