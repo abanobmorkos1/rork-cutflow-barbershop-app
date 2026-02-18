@@ -36,11 +36,8 @@ export default function ConfirmBookingScreen() {
 
   const formattedDate = date
     ? (() => {
-        const [y, m, d] = date.split('-').map(Number);
-        const dt = new Date(y, m - 1, d);
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        return `${days[dt.getDay()]}, ${months[dt.getMonth()]} ${dt.getDate()}`;
+        const [y, m, d] = date.split('-');
+        return `${d}-${m}-${y}`;
       })()
     : '';
 

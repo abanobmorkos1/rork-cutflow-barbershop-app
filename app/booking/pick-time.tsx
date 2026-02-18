@@ -6,7 +6,7 @@ import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useData } from '@/contexts/DataContext';
-import { getAvailableSlots, formatTime, getCalendarDays, MONTH_NAMES, WEEKDAY_HEADERS, toDateStr } from '@/utils/slots';
+import { getAvailableSlots, formatTime, getCalendarDays, MONTH_NAMES, WEEKDAY_HEADERS, toDateStr, formatDateDDMMYYYY } from '@/utils/slots';
 
 export default function PickTimeScreen() {
   const router = useRouter();
@@ -66,9 +66,7 @@ export default function PickTimeScreen() {
   const selectedDateStr = useMemo(() => toDateStr(selectedDate), [selectedDate]);
 
   const formatSelectedLabel = useMemo(() => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${days[selectedDate.getDay()]}, ${months[selectedDate.getMonth()]} ${selectedDate.getDate()}`;
+    return formatDateDDMMYYYY(selectedDate);
   }, [selectedDate]);
 
   return (

@@ -12,7 +12,7 @@ import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { AppointmentStatus } from '@/types';
-import { formatTime, getCalendarDays, MONTH_NAMES, WEEKDAY_HEADERS, toDateStr } from '@/utils/slots';
+import { formatTime, getCalendarDays, MONTH_NAMES, WEEKDAY_HEADERS, toDateStr, formatDateDDMMYYYY } from '@/utils/slots';
 
 const statusColors: Record<AppointmentStatus, string> = {
   Booked: Colors.statusBooked,
@@ -189,9 +189,7 @@ export default function BarberScheduleScreen() {
     if (!selectedDate) return '';
     const [y, m, d] = selectedDate.split('-').map(Number);
     const dt = new Date(y, m - 1, d);
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${days[dt.getDay()]}, ${months[dt.getMonth()]} ${dt.getDate()}`;
+    return formatDateDDMMYYYY(dt);
   }, [selectedDate]);
 
   return (

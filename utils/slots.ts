@@ -96,14 +96,20 @@ export function formatTime(time: string): string {
 
 export function formatDateTime(iso: string): string {
   const d = new Date(iso);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[d.getMonth()];
-  const day = d.getDate();
+  const day = d.getDate().toString().padStart(2, '0');
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const year = d.getFullYear();
   const h = d.getHours();
   const m = d.getMinutes();
   const period = h >= 12 ? 'PM' : 'AM';
   const hour = h % 12 || 12;
-  return `${month} ${day} at ${hour}:${m.toString().padStart(2, '0')} ${period}`;
+  return `${day}-${month}-${year} at ${hour}:${m.toString().padStart(2, '0')} ${period}`;
+}
+
+export function formatDateDisplay(dateStr: string): string {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}-${m}-${y}`;
 }
 
 export function getCalendarDays(year: number, month: number): (Date | null)[] {
@@ -124,4 +130,11 @@ export function getCalendarDays(year: number, month: number): (Date | null)[] {
 
 export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 export const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export function formatDateDDMMYYYY(date: Date): string {
+  const d = date.getDate().toString().padStart(2, '0');
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}-${m}-${y}`;
+}
 export const WEEKDAY_HEADERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];

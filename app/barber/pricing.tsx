@@ -7,6 +7,8 @@ import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { BarberPrices, PromoCode } from '@/types';
+import DateDropdownPicker from '@/components/DateDropdownPicker';
+import { formatDateDisplay } from '@/utils/slots';
 
 export default function BarberPricingScreen() {
   const { user } = useAuth();
@@ -109,11 +111,7 @@ export default function BarberPricingScreen() {
     ]);
   };
 
-  const formatPromoDate = (dateStr: string) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return `${months[m - 1]} ${d}, ${y}`;
-  };
+  const formatPromoDate = (dateStr: string) => formatDateDisplay(dateStr);
 
   if (!barber) {
     return (
@@ -316,17 +314,11 @@ export default function BarberPricingScreen() {
             </View>
 
             <Text style={styles.modalFieldLabel}>VALID DATE</Text>
-            <View style={styles.modalInput}>
-              <Calendar size={16} color={Colors.textMuted} />
-              <TextInput
-                style={styles.modalTextField}
-                value={promoDate}
-                onChangeText={setPromoDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={Colors.textMuted}
-                keyboardType="numbers-and-punctuation"
-              />
-            </View>
+            <DateDropdownPicker
+              value={promoDate}
+              onChange={setPromoDate}
+              label="Promo Valid Date"
+            />
 
             <TouchableOpacity
               style={[styles.modalConfirmBtn, addingPromo && styles.modalConfirmBtnDisabled]}

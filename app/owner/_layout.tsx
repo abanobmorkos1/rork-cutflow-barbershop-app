@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, Users, Scissors, CalendarDays, DollarSign } from 'lucide-react-native';
+import { LayoutDashboard, CalendarDays, Clock, DollarSign, UserCircle } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 
 export default function OwnerLayout() {
@@ -29,24 +29,17 @@ export default function OwnerLayout() {
         }}
       />
       <Tabs.Screen
-        name="barbers"
-        options={{
-          title: 'Barbers',
-          tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="services"
-        options={{
-          title: 'Services',
-          tabBarIcon: ({ color, size }) => <Scissors size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="appointments"
         options={{
           title: 'Appointments',
           tabBarIcon: ({ color, size }) => <CalendarDays size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="availability"
+        options={{
+          title: 'Availability',
+          tabBarIcon: ({ color, size }) => <Clock size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -55,6 +48,21 @@ export default function OwnerLayout() {
           title: 'My Prices',
           tabBarIcon: ({ color, size }) => <DollarSign size={size} color={color} />,
         }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => <UserCircle size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="barbers"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="services"
+        options={{ href: null }}
       />
     </Tabs>
   );
