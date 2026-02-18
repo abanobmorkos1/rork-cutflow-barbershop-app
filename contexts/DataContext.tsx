@@ -32,8 +32,26 @@ export const [DataProvider, useData] = createContextHook(() => {
         AsyncStorage.getItem(PROMOS_KEY),
       ]);
       if (sh) setShops(JSON.parse(sh));
-      if (b) setBarbers(JSON.parse(b));
-      if (s) setServices(JSON.parse(s));
+      if (b) {
+        const parsed = JSON.parse(b) as Barber[];
+        const valid = Array.isArray(parsed) && parsed.length > 0 && parsed.every((x) => !!x.shopId);
+        if (valid) {
+          setBarbers(parsed);
+        } else {
+          console.log('[DataContext] Stored barbers missing shopId, resetting to demo data');
+          await persist(BARBERS_KEY, DEMO_BARBERS);
+        }
+      }
+      if (s) {
+        const parsed = JSON.parse(s) as Service[];
+        const valid = Array.isArray(parsed) && parsed.length > 0 && parsed.every((x) => !!x.shopId);
+        if (valid) {
+          setServices(parsed);
+        } else {
+          console.log('[DataContext] Stored services missing shopId, resetting to demo data');
+          await persist(SERVICES_KEY, DEMO_SERVICES);
+        }
+      }
       if (a) setAppointments(JSON.parse(a));
       if (p) setPromoCodes(JSON.parse(p));
     } catch (e) {
