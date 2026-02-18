@@ -22,10 +22,13 @@ export default function ChooseBarberScreen() {
   const service = serviceId ? getServiceById(serviceId) : null;
 
   const activeBarbers = useMemo(() => {
-    if (!shopId) return [];
+    if (!shopId) {
+      console.log('[choose-barber] No shopId provided');
+      return [];
+    }
     const all = getShopBarbers(shopId);
-    console.log('[choose-barber] all barbers for shop:', all.length);
-    return all.filter((b) => b.inviteStatus !== 'pending');
+    console.log('[choose-barber] all barbers for shop:', shopId, 'count:', all.length, 'barbers:', all.map(b => ({ id: b.id, name: b.name, status: b.inviteStatus })));
+    return all.filter((b) => !b.inviteStatus || b.inviteStatus === 'accepted');
   }, [shopId, getShopBarbers]);
 
   const handleSelect = (barberId: string) => {
@@ -68,15 +71,15 @@ export default function ChooseBarberScreen() {
               <Image source={{ uri: barber.avatar }} style={styles.avatar} />
               <View style={styles.barberInfo}>
                 <Text style={styles.barberName}>{barber.name}</Text>
-                {barber.specialtyTags && barber.specialtyTags.length > 0 ? (
+                {(barber.specialtyTags ?? []).length > 0 ? (
                   <View style={styles.tagsRow}>
-                    {barber.specialtyTags.slice(0, 3).map((tag) => (
+                    {(barber.specialtyTags ?? []).slice(0, 3).map((tag) => (
                       <View key={tag} style={styles.tagChip}>
                         <Text style={styles.tagText}>{tag}</Text>
                       </View>
                     ))}
-                    {barber.specialtyTags.length > 3 && (
-                      <Text style={styles.moreTagsText}>+{barber.specialtyTags.length - 3}</Text>
+                    {(barber.specialtyTags ?? []).length > 3 && (
+                      <Text style={styles.moreTagsText}>+{(barber.specialtyTags ?? []).length - 3}</Text>
                     )}
                   </View>
                 ) : (

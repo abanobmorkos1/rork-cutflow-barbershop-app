@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Animated,
 } from 'react-native';
@@ -14,11 +14,14 @@ export default function ShopDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getShopById, getShopBarbers, getShopServices } = useData();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null);
+  const servicesRef = useRef<View>(null);
+  const scrollRef = useRef<ScrollView>(null);
 
   const shop = id ? getShopById(id) : null;
   const barbers = useMemo(() => {
     if (!id) return [];
-    return getShopBarbers(id).filter((b) => b.inviteStatus !== 'pending');
+    return getShopBarbers(id).filter((b) => !b.inviteStatus || b.inviteStatus === 'accepted');
   }, [id, getShopBarbers]);
   const services = useMemo(() => (id ? getShopServices(id) : []), [id, getShopServices]);
 
@@ -48,8 +51,17 @@ export default function ShopDetailScreen() {
     );
   }
 
+  const handleBarberTap = useCallback((barberId: string) => {
+    setSelectedBarberId((prev) => (prev === barberId ? null : barberId));
+  }, []);
+
   const handleSelectService = (serviceId: string) => {
-    router.push(`/booking/choose-barber?serviceId=${serviceId}&shopId=${shop.id}` as any);
+    if (selectedBarberId) {
+      router.push(`/booking/pick-time?serviceId=${serviceId}&barberId=${selectedBarberId}&shopId=${shop.id}` as any);
+      setSelectedBarberId(null);
+    } else {
+      router.push(`/booking/choose-barber?serviceId=${serviceId}&shopId=${shop.id}` as any);
+    }
   };
 
   return (
@@ -115,18 +127,45 @@ export default function ShopDetailScreen() {
                 <Text style={styles.countText}>{barbers.length}</Text>
               </View>
             </View>
+            {selectedBarberId && (
+              <View style={styles.selectedBarberBanner}>
+                <Text style={styles.selectedBarberText}>
+                  Select a service below to book with{' '}
+                  <Text style={styles.selectedBarberName}>
+                    {barbers.find((b) => b.id === selectedBarberId)?.name}
+                  </Text>
+                </Text>
+                <TouchableOpacity onPress={() => setSelectedBarberId(null)}>
+                  <Text style={styles.selectedBarberCancel}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.barbersScroll}>
-              {barbers.map((barber) => (
-                <View key={barber.id} style={styles.barberChip}>
-                  <Image source={{ uri: barber.avatar }} style={styles.barberAvatar} />
-                  <Text style={styles.barberChipName} numberOfLines={1}>{barber.name}</Text>
-                  {barber.specialtyTags.length > 0 && (
-                    <Text style={styles.barberChipTag} numberOfLines={1}>
-                      {barber.specialtyTags[0]}
-                    </Text>
-                  )}
-                </View>
-              ))}
+              {barbers.map((barber) => {
+                const isSelected = selectedBarberId === barber.id;
+                const tags = barber.specialtyTags ?? [];
+                return (
+                  <TouchableOpacity
+                    key={barber.id}
+                    style={[styles.barberChip, isSelected && styles.barberChipSelected]}
+                    onPress={() => handleBarberTap(barber.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Image source={{ uri: barber.avatar }} style={[styles.barberAvatar, isSelected && styles.barberAvatarSelected]} />
+                    <Text style={[styles.barberChipName, isSelected && styles.barberChipNameSelected]} numberOfLines={1}>{barber.name}</Text>
+                    {tags.length > 0 && (
+                      <Text style={styles.barberChipTag} numberOfLines={1}>
+                        {tags[0]}
+                      </Text>
+                    )}
+                    <View style={[styles.bookBadge, isSelected && styles.bookBadgeSelected]}>
+                      <Text style={[styles.bookBadgeText, isSelected && styles.bookBadgeTextSelected]}>
+                        {isSelected ? 'Selected' : 'Tap to book'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
 
@@ -299,6 +338,62 @@ const styles = StyleSheet.create({
   },
   barberChipName: { fontSize: 12, fontWeight: '600' as const, color: Colors.text, textAlign: 'center' as const },
   barberChipTag: { fontSize: 10, color: Colors.accent, textAlign: 'center' as const },
+  barberChipSelected: {
+    borderColor: Colors.accent,
+    backgroundColor: 'rgba(200,149,108,0.08)',
+  },
+  barberAvatarSelected: {
+    borderWidth: 2,
+    borderColor: Colors.accent,
+  },
+  barberChipNameSelected: {
+    color: Colors.accent,
+  },
+  bookBadge: {
+    backgroundColor: 'rgba(200,149,108,0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginTop: 2,
+  },
+  bookBadgeSelected: {
+    backgroundColor: Colors.accent,
+  },
+  bookBadgeText: {
+    fontSize: 9,
+    fontWeight: '600' as const,
+    color: Colors.accent,
+  },
+  bookBadgeTextSelected: {
+    color: Colors.black,
+  },
+  selectedBarberBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(200,149,108,0.1)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(200,149,108,0.2)',
+  },
+  selectedBarberText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    flex: 1,
+  },
+  selectedBarberName: {
+    fontWeight: '700' as const,
+    color: Colors.accent,
+  },
+  selectedBarberCancel: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.textMuted,
+    marginLeft: 12,
+  },
   serviceCard: {
     flexDirection: 'row',
     alignItems: 'center',
