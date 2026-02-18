@@ -1,19 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { Barber, Service, Appointment, Shop, ShopHours, AppointmentStatus, WeeklyAvailability, DateOverrides, BarberPrices, BarberSpecialtyTag } from '@/types';
+import { Barber, Service, Appointment, Shop, ShopHours, AppointmentStatus, WeeklyAvailability, DateOverrides, BarberPrices, BarberSpecialtyTag, PromoCode } from '@/types';
 import { DEMO_BARBERS, DEMO_SERVICES, DEMO_APPOINTMENTS, DEMO_SHOPS, DEFAULT_SHOP_HOURS } from '@/mocks/data';
 
 const SHOPS_KEY = 'cutflow_shops';
 const BARBERS_KEY = 'cutflow_barbers';
 const SERVICES_KEY = 'cutflow_services';
 const APPTS_KEY = 'cutflow_appointments';
+const PROMOS_KEY = 'cutflow_promos';
 
 export const [DataProvider, useData] = createContextHook(() => {
   const [shops, setShops] = useState<Shop[]>(DEMO_SHOPS);
   const [barbers, setBarbers] = useState<Barber[]>(DEMO_BARBERS);
   const [services, setServices] = useState<Service[]>(DEMO_SERVICES);
   const [appointments, setAppointments] = useState<Appointment[]>(DEMO_APPOINTMENTS);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -22,16 +24,18 @@ export const [DataProvider, useData] = createContextHook(() => {
 
   const loadData = async () => {
     try {
-      const [sh, b, s, a] = await Promise.all([
+      const [sh, b, s, a, p] = await Promise.all([
         AsyncStorage.getItem(SHOPS_KEY),
         AsyncStorage.getItem(BARBERS_KEY),
         AsyncStorage.getItem(SERVICES_KEY),
         AsyncStorage.getItem(APPTS_KEY),
+        AsyncStorage.getItem(PROMOS_KEY),
       ]);
       if (sh) setShops(JSON.parse(sh));
       if (b) setBarbers(JSON.parse(b));
       if (s) setServices(JSON.parse(s));
       if (a) setAppointments(JSON.parse(a));
+      if (p) setPromoCodes(JSON.parse(p));
     } catch (e) {
       console.log('Error loading data:', e);
     } finally {
@@ -208,6 +212,31 @@ export const [DataProvider, useData] = createContextHook(() => {
     [appointments]
   );
 
+  const addPromoCode = useCallback(async (promo: PromoCode) => {
+    const updated = [...promoCodes, promo];
+    setPromoCodes(updated);
+    await persist(PROMOS_KEY, updated);
+  }, [promoCodes, persist]);
+
+  const removePromoCode = useCallback(async (id: string) => {
+    const updated = promoCodes.filter((p) => p.id !== id);
+    setPromoCodes(updated);
+    await persist(PROMOS_KEY, updated);
+  }, [promoCodes, persist]);
+
+  const togglePromoCode = useCallback(async (id: string) => {
+    const updated = promoCodes.map((p) =>
+      p.id === id ? { ...p, isActive: !p.isActive } : p
+    );
+    setPromoCodes(updated);
+    await persist(PROMOS_KEY, updated);
+  }, [promoCodes, persist]);
+
+  const getBarberPromoCodes = useCallback(
+    (barberId: string) => promoCodes.filter((p) => p.barberId === barberId),
+    [promoCodes]
+  );
+
   return {
     shops,
     barbers,
@@ -239,5 +268,10 @@ export const [DataProvider, useData] = createContextHook(() => {
     getBarberByUserId,
     getBarberAppointments,
     getCustomerAppointments,
+    promoCodes,
+    addPromoCode,
+    removePromoCode,
+    togglePromoCode,
+    getBarberPromoCodes,
   };
 });

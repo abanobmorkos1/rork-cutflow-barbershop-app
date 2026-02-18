@@ -45,7 +45,6 @@ export default function ChooseBarberScreen() {
 
         {activeBarbers.map((barber) => {
           const barberPrice = serviceId ? getBarberPrice(barber.id, serviceId) : service?.price ?? 0;
-          const isCustomPrice = barberPrice !== service?.price;
 
           return (
             <TouchableOpacity
@@ -75,9 +74,6 @@ export default function ChooseBarberScreen() {
                   <View style={styles.priceRow}>
                     <DollarSign size={13} color={Colors.accent} />
                     <Text style={styles.barberPrice}>{barberPrice}</Text>
-                    {isCustomPrice && (
-                      <Text style={styles.customTag}>Custom price</Text>
-                    )}
                   </View>
                   {barber.yearsExperience > 0 && (
                     <View style={styles.expRow}>
@@ -180,17 +176,6 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   barberPrice: { fontSize: 15, fontWeight: '700' as const, color: Colors.accent },
-  customTag: {
-    fontSize: 10,
-    fontWeight: '600' as const,
-    color: Colors.info,
-    backgroundColor: 'rgba(33,150,243,0.1)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginLeft: 8,
-    overflow: 'hidden',
-  },
   expRow: {
     flexDirection: 'row',
     alignItems: 'center',

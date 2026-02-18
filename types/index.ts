@@ -112,3 +112,13 @@ export interface Appointment {
 export interface ShopHours {
   [day: string]: { open: string; close: string } | null;
 }
+
+export interface PromoCode {
+  id: string;
+  barberId: string;
+  code: string;
+  discountPercent: number;
+  validDate: string;
+  isActive: boolean;
+  createdAt: string;
+}

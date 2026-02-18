@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { BarberPrices, PromoCode } from '@/types';
 
-export default function BarberPricingScreen() {
+export default function OwnerPricingScreen() {
   const { user } = useAuth();
   const { getBarberByUserId, getShopServices, updateBarberPrices, getBarberPromoCodes, addPromoCode, removePromoCode, togglePromoCode } = useData();
 
@@ -65,19 +65,10 @@ export default function BarberPricingScreen() {
   const handleAddPromo = async () => {
     if (!barber) return;
     const trimCode = promoCode.trim().toUpperCase();
-    if (!trimCode) {
-      Alert.alert('Missing', 'Enter a promo code');
-      return;
-    }
+    if (!trimCode) { Alert.alert('Missing', 'Enter a promo code'); return; }
     const pct = parseInt(promoDiscount, 10);
-    if (isNaN(pct) || pct <= 0 || pct > 100) {
-      Alert.alert('Invalid', 'Discount must be between 1 and 100%');
-      return;
-    }
-    if (!promoDate) {
-      Alert.alert('Missing', 'Pick a valid date (YYYY-MM-DD)');
-      return;
-    }
+    if (isNaN(pct) || pct <= 0 || pct > 100) { Alert.alert('Invalid', 'Discount must be 1–100%'); return; }
+    if (!promoDate) { Alert.alert('Missing', 'Enter a valid date (YYYY-MM-DD)'); return; }
     setAddingPromo(true);
     try {
       const promo: PromoCode = {
@@ -90,9 +81,7 @@ export default function BarberPricingScreen() {
         createdAt: new Date().toISOString(),
       };
       await addPromoCode(promo);
-      setPromoCode('');
-      setPromoDiscount('');
-      setPromoDate('');
+      setPromoCode(''); setPromoDiscount(''); setPromoDate('');
       setShowPromoModal(false);
       Alert.alert('Promo Created!', `Code "${trimCode}" is live for ${promoDate}`);
     } catch {
@@ -118,8 +107,12 @@ export default function BarberPricingScreen() {
   if (!barber) {
     return (
       <View style={styles.container}>
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>Barber profile not found</Text>
+        <View style={styles.emptyWrap}>
+          <Scissors size={40} color={Colors.textMuted} />
+          <Text style={styles.emptyTitle}>No barber profile</Text>
+          <Text style={styles.emptyDesc}>
+            Your barber profile is set up when your account is created. Contact support if missing.
+          </Text>
         </View>
       </View>
     );
@@ -129,7 +122,7 @@ export default function BarberPricingScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>My Prices</Text>
       <Text style={styles.subtitle}>
-        Set your own rate per service. Leave blank to use the shop default.
+        Set your personal rate for each service. Leave blank to use the shop default price.
       </Text>
 
       {services.map((svc) => {
@@ -150,12 +143,11 @@ export default function BarberPricingScreen() {
 
             <View style={styles.priceRow}>
               <View style={styles.defaultPrice}>
-                <Text style={styles.defaultLabel}>Shop price</Text>
+                <Text style={styles.fieldLabel}>Shop price</Text>
                 <Text style={styles.defaultValue}>${svc.price}</Text>
               </View>
-
               <View style={styles.customPriceWrap}>
-                <Text style={styles.customLabel}>Your price</Text>
+                <Text style={styles.fieldLabel}>Your price</Text>
                 <View style={[styles.priceInput, hasCustom && styles.priceInputActive]}>
                   <DollarSign size={16} color={hasCustom ? Colors.accent : Colors.textMuted} />
                   <TextInput
@@ -175,10 +167,7 @@ export default function BarberPricingScreen() {
                 styles.diffBadge,
                 { backgroundColor: customPrice > svc.price ? 'rgba(76,175,80,0.1)' : 'rgba(255,152,0,0.1)' },
               ]}>
-                <Text style={[
-                  styles.diffText,
-                  { color: customPrice > svc.price ? Colors.success : Colors.warning },
-                ]}>
+                <Text style={[styles.diffText, { color: customPrice > svc.price ? Colors.success : Colors.warning }]}>
                   {customPrice > svc.price ? '+' : ''}${(customPrice - svc.price).toFixed(0)} from shop price
                 </Text>
               </View>
@@ -189,8 +178,8 @@ export default function BarberPricingScreen() {
 
       {services.length === 0 && (
         <View style={styles.emptyServices}>
-          <Scissors size={40} color={Colors.textMuted} />
-          <Text style={styles.emptyText}>No services available</Text>
+          <Scissors size={36} color={Colors.textMuted} />
+          <Text style={styles.emptyTitle}>No services yet</Text>
         </View>
       )}
 
@@ -201,16 +190,14 @@ export default function BarberPricingScreen() {
         activeOpacity={0.8}
       >
         <Save size={18} color={Colors.black} />
-        <Text style={styles.saveBtnText}>
-          {saving ? 'Saving...' : 'Save Prices'}
-        </Text>
+        <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Prices'}</Text>
       </TouchableOpacity>
 
       <View style={styles.promosSection}>
         <View style={styles.promosSectionHeader}>
           <View>
             <Text style={styles.promosSectionTitle}>Promo Codes</Text>
-            <Text style={styles.promosSectionDesc}>Boost traffic on slow days</Text>
+            <Text style={styles.promosSectionDesc}>Drive traffic on slow days</Text>
           </View>
           <TouchableOpacity
             style={styles.addPromoBtn}
@@ -227,7 +214,7 @@ export default function BarberPricingScreen() {
             <Tag size={28} color={Colors.textMuted} />
             <Text style={styles.promosEmptyTitle}>No promo codes yet</Text>
             <Text style={styles.promosEmptyDesc}>
-              Create a discount code for a specific day to attract more clients
+              Create a discount for a specific date to fill up your calendar
             </Text>
           </View>
         )}
@@ -247,21 +234,12 @@ export default function BarberPricingScreen() {
               </View>
             </View>
             <View style={styles.promoActions}>
-              <TouchableOpacity
-                onPress={() => togglePromoCode(promo.id)}
-                style={styles.promoToggle}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity onPress={() => togglePromoCode(promo.id)} style={styles.promoToggle} activeOpacity={0.7}>
                 {promo.isActive
                   ? <ToggleRight size={26} color={Colors.success} />
-                  : <ToggleLeft size={26} color={Colors.textMuted} />
-                }
+                  : <ToggleLeft size={26} color={Colors.textMuted} />}
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleDeletePromo(promo)}
-                style={styles.promoDelete}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity onPress={() => handleDeletePromo(promo)} style={styles.promoDelete} activeOpacity={0.7}>
                 <Trash2 size={16} color={Colors.error} />
               </TouchableOpacity>
             </View>
@@ -269,12 +247,7 @@ export default function BarberPricingScreen() {
         ))}
       </View>
 
-      <Modal
-        visible={showPromoModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowPromoModal(false)}
-      >
+      <Modal visible={showPromoModal} transparent animationType="slide" onRequestClose={() => setShowPromoModal(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setShowPromoModal(false)}>
           <Pressable style={styles.modalSheet} onPress={() => {}}>
             <View style={styles.modalHandle} />
@@ -284,9 +257,7 @@ export default function BarberPricingScreen() {
                 <X size={18} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.modalDesc}>
-              Clients can use this code when booking on the selected day to get a discount.
-            </Text>
+            <Text style={styles.modalDesc}>Clients apply this code when booking on the selected day.</Text>
 
             <Text style={styles.modalFieldLabel}>CODE</Text>
             <View style={styles.modalInput}>
@@ -295,7 +266,7 @@ export default function BarberPricingScreen() {
                 style={styles.modalTextField}
                 value={promoCode}
                 onChangeText={(v) => setPromoCode(v.toUpperCase())}
-                placeholder="e.g. FRIDAY20"
+                placeholder="e.g. MONDAY15"
                 placeholderTextColor={Colors.textMuted}
                 autoCapitalize="characters"
                 autoCorrect={false}
@@ -309,7 +280,7 @@ export default function BarberPricingScreen() {
                 style={styles.modalTextField}
                 value={promoDiscount}
                 onChangeText={setPromoDiscount}
-                placeholder="e.g. 20"
+                placeholder="e.g. 15"
                 placeholderTextColor={Colors.textMuted}
                 keyboardType="number-pad"
               />
@@ -334,9 +305,7 @@ export default function BarberPricingScreen() {
               disabled={addingPromo}
               activeOpacity={0.85}
             >
-              <Text style={styles.modalConfirmBtnText}>
-                {addingPromo ? 'Creating...' : 'Create Promo'}
-              </Text>
+              <Text style={styles.modalConfirmBtnText}>{addingPromo ? 'Creating...' : 'Create Promo'}</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
@@ -348,38 +317,26 @@ export default function BarberPricingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { fontSize: 16, color: Colors.textSecondary },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 10 },
+  emptyTitle: { fontSize: 16, fontWeight: '700' as const, color: Colors.textSecondary },
+  emptyDesc: { fontSize: 14, color: Colors.textMuted, textAlign: 'center' as const, lineHeight: 20 },
   title: { fontSize: 22, fontWeight: '700' as const, color: Colors.text, marginBottom: 4 },
   subtitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: 24, lineHeight: 20 },
   serviceCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: Colors.card, borderRadius: 16, padding: 18,
+    marginBottom: 12, borderWidth: 1, borderColor: Colors.border,
   },
-  serviceTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
+  serviceTop: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   serviceIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: 'rgba(200,149,108,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 42, height: 42, borderRadius: 12,
+    backgroundColor: 'rgba(200,149,108,0.1)', alignItems: 'center', justifyContent: 'center',
   },
   serviceInfo: { flex: 1 },
   serviceName: { fontSize: 16, fontWeight: '600' as const, color: Colors.text },
   serviceDuration: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
   priceRow: { flexDirection: 'row', gap: 14 },
   defaultPrice: { flex: 1 },
-  defaultLabel: {
+  fieldLabel: {
     fontSize: 11, fontWeight: '600' as const, color: Colors.textMuted,
     textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 6,
   },
@@ -390,71 +347,52 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border,
   },
   customPriceWrap: { flex: 1 },
-  customLabel: {
-    fontSize: 11, fontWeight: '600' as const, color: Colors.textMuted,
-    textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 6,
-  },
   priceInput: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface,
     borderRadius: 10, paddingHorizontal: 12, height: 44,
     borderWidth: 1, borderColor: Colors.border, gap: 4,
   },
-  priceInputActive: {
-    borderColor: Colors.accent,
-    backgroundColor: 'rgba(200,149,108,0.06)',
-  },
+  priceInputActive: { borderColor: Colors.accent, backgroundColor: 'rgba(200,149,108,0.06)' },
   priceField: { flex: 1, color: Colors.text, fontSize: 16, fontWeight: '700' as const },
   diffBadge: {
     marginTop: 10, paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 8, alignSelf: 'flex-start' as const,
   },
   diffText: { fontSize: 12, fontWeight: '600' as const },
-  emptyServices: { alignItems: 'center', paddingVertical: 48, gap: 8 },
+  emptyServices: { alignItems: 'center', paddingVertical: 40, gap: 8 },
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.accent, height: 54, borderRadius: 14, gap: 8, marginTop: 4,
   },
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: { fontSize: 16, fontWeight: '700' as const, color: Colors.black },
-  promosSection: {
-    marginTop: 32,
-  },
+  promosSection: { marginTop: 32 },
   promosSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16,
   },
   promosSectionTitle: { fontSize: 18, fontWeight: '700' as const, color: Colors.text },
   promosSectionDesc: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
   addPromoBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.accent, paddingHorizontal: 14, paddingVertical: 9,
-    borderRadius: 12,
+    backgroundColor: Colors.accent, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12,
   },
   addPromoBtnText: { fontSize: 13, fontWeight: '700' as const, color: Colors.black },
   promosEmpty: {
-    backgroundColor: Colors.card, borderRadius: 16, padding: 28,
-    alignItems: 'center', gap: 8, borderWidth: 1, borderColor: Colors.border,
-    borderStyle: 'dashed' as const,
+    backgroundColor: Colors.card, borderRadius: 16, padding: 28, alignItems: 'center',
+    gap: 8, borderWidth: 1, borderColor: Colors.border, borderStyle: 'dashed' as const,
   },
   promosEmptyTitle: { fontSize: 15, fontWeight: '700' as const, color: Colors.textSecondary },
-  promosEmptyDesc: {
-    fontSize: 13, color: Colors.textMuted, textAlign: 'center' as const, lineHeight: 19,
-  },
+  promosEmptyDesc: { fontSize: 13, color: Colors.textMuted, textAlign: 'center' as const, lineHeight: 19 },
   promoCard: {
-    backgroundColor: Colors.card, borderRadius: 14, padding: 16,
-    marginBottom: 10, borderWidth: 1, borderColor: Colors.border,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: Colors.card, borderRadius: 14, padding: 16, marginBottom: 10,
+    borderWidth: 1, borderColor: Colors.border, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  promoCardInactive: {
-    opacity: 0.5,
-  },
+  promoCardInactive: { opacity: 0.5 },
   promoLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   promoCodeBadge: {
-    backgroundColor: 'rgba(200,149,108,0.15)',
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
-    borderWidth: 1, borderColor: 'rgba(200,149,108,0.3)',
+    backgroundColor: 'rgba(200,149,108,0.15)', paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 10, borderWidth: 1, borderColor: 'rgba(200,149,108,0.3)',
   },
   promoCodeText: { fontSize: 15, fontWeight: '800' as const, color: Colors.accent, letterSpacing: 1 },
   promoMeta: { gap: 4 },
@@ -467,13 +405,10 @@ const styles = StyleSheet.create({
     width: 34, height: 34, borderRadius: 10,
     backgroundColor: 'rgba(229,57,53,0.1)', alignItems: 'center', justifyContent: 'center',
   },
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end',
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   modalSheet: {
     backgroundColor: Colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 24, paddingBottom: 40,
-    borderTopWidth: 1, borderColor: Colors.border,
+    padding: 24, paddingBottom: 40, borderTopWidth: 1, borderColor: Colors.border,
   },
   modalHandle: {
     width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.border,
@@ -489,8 +424,7 @@ const styles = StyleSheet.create({
   },
   modalDesc: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20, marginBottom: 20 },
   modalFieldLabel: {
-    fontSize: 11, fontWeight: '700' as const, color: Colors.textMuted,
-    letterSpacing: 1, marginBottom: 6,
+    fontSize: 11, fontWeight: '700' as const, color: Colors.textMuted, letterSpacing: 1, marginBottom: 6,
   },
   modalInput: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,

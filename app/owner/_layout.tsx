@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, Users, Scissors, CalendarDays } from 'lucide-react-native';
+import { LayoutDashboard, Users, Scissors, CalendarDays, DollarSign } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 
 export default function OwnerLayout() {
@@ -47,6 +47,13 @@ export default function OwnerLayout() {
         options={{
           title: 'Appointments',
           tabBarIcon: ({ color, size }) => <CalendarDays size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="pricing"
+        options={{
+          title: 'My Prices',
+          tabBarIcon: ({ color, size }) => <DollarSign size={size} color={color} />,
         }}
       />
     </Tabs>
