@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Modal, Pressable,
 } from 'react-native';
@@ -32,10 +32,17 @@ export default function OwnerPricingScreen() {
   const [prices, setPrices] = useState<BarberPrices>(barber?.prices ?? {});
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (barber?.prices) {
+      setPrices(barber.prices);
+    }
+  }, [barber]);
+
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoDiscount, setPromoDiscount] = useState('');
-  const [promoDate, setPromoDate] = useState('');
+  const [promoDateStart, setPromoDateStart] = useState('');
+  const [promoDateEnd, setPromoDateEnd] = useState('');
   const [addingPromo, setAddingPromo] = useState(false);
 
   const handlePriceChange = useCallback((serviceId: string, value: string) => {
@@ -70,7 +77,8 @@ export default function OwnerPricingScreen() {
     if (!trimCode) { Alert.alert('Missing', 'Enter a promo code'); return; }
     const pct = parseInt(promoDiscount, 10);
     if (isNaN(pct) || pct <= 0 || pct > 100) { Alert.alert('Invalid', 'Discount must be 1–100%'); return; }
-    if (!promoDate) { Alert.alert('Missing', 'Enter a valid date (YYYY-MM-DD)'); return; }
+    if (!promoDateStart || !promoDateEnd) { Alert.alert('Missing', 'Pick both start and end dates'); return; }
+    if (promoDateEnd < promoDateStart) { Alert.alert('Invalid', 'End date must be on or after start date'); return; }
     setAddingPromo(true);
     try {
       const promo: PromoCode = {
@@ -78,14 +86,15 @@ export default function OwnerPricingScreen() {
         barberId: barber.id,
         code: trimCode,
         discountPercent: pct,
-        validDate: promoDate,
+        validDateStart: promoDateStart,
+        validDateEnd: promoDateEnd,
         isActive: true,
         createdAt: new Date().toISOString(),
       };
       await addPromoCode(promo);
-      setPromoCode(''); setPromoDiscount(''); setPromoDate('');
+      setPromoCode(''); setPromoDiscount(''); setPromoDateStart(''); setPromoDateEnd('');
       setShowPromoModal(false);
-      Alert.alert('Promo Created!', `Code "${trimCode}" is live for ${promoDate}`);
+      Alert.alert('Promo Created!', `Code "${trimCode}" is live from ${formatDateDisplay(promoDateStart)} to ${formatDateDisplay(promoDateEnd)}`);
     } catch {
       Alert.alert('Error', 'Failed to add promo');
     } finally {
@@ -100,7 +109,9 @@ export default function OwnerPricingScreen() {
     ]);
   };
 
-  const formatPromoDate = (dateStr: string) => formatDateDisplay(dateStr);
+  const formatPromoRange = (start: string, end: string) => {
+    return `${formatDateDisplay(start)} \u2192 ${formatDateDisplay(end)}`;
+  };
 
   if (!barber) {
     return (
@@ -227,7 +238,7 @@ export default function OwnerPricingScreen() {
                 <Text style={styles.promoDiscount}>{promo.discountPercent}% off</Text>
                 <View style={styles.promoDateRow}>
                   <Calendar size={11} color={Colors.textMuted} />
-                  <Text style={styles.promoDateText}>{formatPromoDate(promo.validDate)}</Text>
+                  <Text style={styles.promoDateText}>{formatPromoRange(promo.validDateStart, promo.validDateEnd)}</Text>
                 </View>
               </View>
             </View>
@@ -255,7 +266,7 @@ export default function OwnerPricingScreen() {
                 <X size={18} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.modalDesc}>Clients apply this code when booking on the selected day.</Text>
+            <Text style={styles.modalDesc}>Clients apply this code when booking during the selected dates.</Text>
 
             <Text style={styles.modalFieldLabel}>CODE</Text>
             <View style={styles.modalInput}>
@@ -284,11 +295,18 @@ export default function OwnerPricingScreen() {
               />
             </View>
 
-            <Text style={styles.modalFieldLabel}>VALID DATE</Text>
+            <Text style={styles.modalFieldLabel}>START DATE</Text>
             <DateDropdownPicker
-              value={promoDate}
-              onChange={setPromoDate}
-              label="Promo Valid Date"
+              value={promoDateStart}
+              onChange={setPromoDateStart}
+              label="Promo Start Date"
+            />
+            <View style={{ height: 12 }} />
+            <Text style={styles.modalFieldLabel}>END DATE</Text>
+            <DateDropdownPicker
+              value={promoDateEnd}
+              onChange={setPromoDateEnd}
+              label="Promo End Date"
             />
 
             <TouchableOpacity

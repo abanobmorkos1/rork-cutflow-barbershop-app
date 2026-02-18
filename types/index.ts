@@ -118,7 +118,8 @@ export interface PromoCode {
   barberId: string;
   code: string;
   discountPercent: number;
-  validDate: string;
+  validDateStart: string;
+  validDateEnd: string;
   isActive: boolean;
   createdAt: string;
 }

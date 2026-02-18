@@ -8,15 +8,26 @@ import Colors from '@/constants/colors';
 import { useData } from '@/contexts/DataContext';
 import { getAvailableSlots, formatTime, getCalendarDays, MONTH_NAMES, WEEKDAY_HEADERS, toDateStr, formatDateDDMMYYYY } from '@/utils/slots';
 
+function paramStr(val: string | string[] | undefined): string {
+  if (Array.isArray(val)) return val[0] ?? '';
+  return val ?? '';
+}
+
 export default function PickTimeScreen() {
   const router = useRouter();
-  const { serviceId, barberId, shopId } = useLocalSearchParams<{ serviceId: string; barberId: string; shopId: string }>();
+  const raw = useLocalSearchParams<{ serviceId: string; barberId: string; shopId: string }>();
+  const serviceId = paramStr(raw.serviceId);
+  const barberId = paramStr(raw.barberId);
+  const shopId = paramStr(raw.shopId);
   const { getBarberById, getServiceById, appointments, getShopById, getBarberPrice } = useData();
 
   const barber = barberId ? getBarberById(barberId) : null;
   const service = serviceId ? getServiceById(serviceId) : null;
   const shop = shopId ? getShopById(shopId) : null;
   const shopHours = shop?.hours ?? {};
+
+  console.log('[pick-time] serviceId:', serviceId, 'barberId:', barberId, 'shopId:', shopId);
+  console.log('[pick-time] barber:', barber?.name, 'service:', service?.name, 'shop:', shop?.name);
 
   const now = new Date();
   const [calMonth, setCalMonth] = useState(now.getMonth());

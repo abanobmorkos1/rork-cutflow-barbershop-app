@@ -10,17 +10,29 @@ import { useData } from '@/contexts/DataContext';
 import { Appointment } from '@/types';
 import { formatTime } from '@/utils/slots';
 
+function paramStr(val: string | string[] | undefined): string {
+  if (Array.isArray(val)) return val[0] ?? '';
+  return val ?? '';
+}
+
 export default function ConfirmBookingScreen() {
   const router = useRouter();
-  const { serviceId, barberId, date, time, shopId } = useLocalSearchParams<{
+  const raw = useLocalSearchParams<{
     serviceId: string;
     barberId: string;
     date: string;
     time: string;
     shopId: string;
   }>();
+  const serviceId = paramStr(raw.serviceId);
+  const barberId = paramStr(raw.barberId);
+  const date = paramStr(raw.date);
+  const time = paramStr(raw.time);
+  const shopId = paramStr(raw.shopId);
   const { user } = useAuth();
   const { getBarberById, getServiceById, addAppointment, getBarberPrice, getShopById } = useData();
+
+  console.log('[confirm] serviceId:', serviceId, 'barberId:', barberId, 'date:', date, 'time:', time, 'shopId:', shopId, 'user:', user?.id);
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const checkScale = useRef(new Animated.Value(0)).current;
@@ -42,7 +54,11 @@ export default function ConfirmBookingScreen() {
     : '';
 
   const handleConfirm = async () => {
-    if (!user || !barberId || !serviceId || !date || !time || !shopId) return;
+    if (!user || !barberId || !serviceId || !date || !time || !shopId) {
+      console.log('[confirm] missing params:', { user: !!user, barberId, serviceId, date, time, shopId });
+      Alert.alert('Error', 'Missing booking details. Please go back and try again.');
+      return;
+    }
     setLoading(true);
     try {
       const [y, m, d] = date.split('-').map(Number);

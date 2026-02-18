@@ -5,19 +5,31 @@ import { ChevronRight, DollarSign, Award } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useData } from '@/contexts/DataContext';
 
+function paramStr(val: string | string[] | undefined): string {
+  if (Array.isArray(val)) return val[0] ?? '';
+  return val ?? '';
+}
+
 export default function ChooseBarberScreen() {
   const router = useRouter();
-  const { serviceId, shopId } = useLocalSearchParams<{ serviceId: string; shopId: string }>();
+  const raw = useLocalSearchParams<{ serviceId: string; shopId: string }>();
+  const serviceId = paramStr(raw.serviceId);
+  const shopId = paramStr(raw.shopId);
   const { getServiceById, getBarberPrice, getShopBarbers } = useData();
+
+  console.log('[choose-barber] serviceId:', serviceId, 'shopId:', shopId);
 
   const service = serviceId ? getServiceById(serviceId) : null;
 
   const activeBarbers = useMemo(() => {
     if (!shopId) return [];
-    return getShopBarbers(shopId).filter((b) => b.inviteStatus !== 'pending');
+    const all = getShopBarbers(shopId);
+    console.log('[choose-barber] all barbers for shop:', all.length);
+    return all.filter((b) => b.inviteStatus !== 'pending');
   }, [shopId, getShopBarbers]);
 
   const handleSelect = (barberId: string) => {
+    console.log('[choose-barber] selected barber:', barberId);
     router.push(`/booking/pick-time?serviceId=${serviceId}&barberId=${barberId}&shopId=${shopId}` as any);
   };
 
